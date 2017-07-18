@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -122,6 +123,33 @@ func (s *Server) EditHandler() httprouter.Handle {
 	}
 }
 
+// SaveHandler ...
+func (s *Server) SaveHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		s.counters.Inc("n_save")
+
+		title := r.FormValue("title")
+		body := r.FormValue("body")
+		tags := r.FormValue("tags")
+
+		log.Printf("note saved: ")
+		fmt.Printf(" title: %s\n", title)
+		fmt.Printf(" body: %s\n", body)
+		fmt.Printf(" tags: %s\n", tags)
+
+		/*
+			todo := NewNote(r.FormValue("title"))
+			err := db.Save(todo)
+			if err != nil {
+				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				return
+			}
+		*/
+
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
+}
+
 // StatsHandler ...
 func (s *Server) StatsHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -157,7 +185,7 @@ func (s *Server) initRoutes() {
 	s.router.GET("/", s.IndexHandler())
 
 	s.router.GET("/new", s.EditHandler())
-	s.router.POST("/new", s.EditHandler())
+	s.router.POST("/save", s.SaveHandler())
 }
 
 // NewServer ...
