@@ -1,0 +1,42 @@
+{{define "stylesheets"}}
+<link rel="stylesheet" href="//cdn.rawgit.com/sparksuite/simplemde-markdown-editor/1.11.2/dist/simplemde.min.css">
+{{end}}
+{{define "content"}}
+<section class="container">
+  <div class="columns">
+    <div class="column">
+      <form action="/new" method="POST">
+        <div class="form-group">
+          <input type="text" class="form-input" name="title" placeholder="Title"/>
+          <textarea class="form-input" id="input-body" name="body" placeholder="Content" cols="80" rows="24">{{printf "%s" .Body}}</textarea>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-sm btn-primary" type="submit">Save</button>
+          <a class="btn btn-sm btn-link" href="/">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{{end}}
+{{define "scripts"}}
+<script src="//cdn.rawgit.com/jquery/jquery/3.2.1/dist/jquery.slim.min.js"></script>
+<script src="//cdn.rawgit.com/sparksuite/simplemde-markdown-editor/1.11.2/dist/simplemde.min.js"></script>
+<script>
+$(document).ready(function() {
+  var simplemde = new SimpleMDE({
+      element: $("#indput-body")[0],
+      autofocus: true,
+      autosave: {
+          enabled: true,
+          uniqueId: "notes", // TODO: Make this configurable?
+          delay: 1000,
+      },
+      forceSync: true,
+      indentWithTabs: false,
+      promptURLs: true,
+      tabSize: 4,
+  });
+});
+</script>
+{{end}}

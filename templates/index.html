@@ -1,0 +1,24 @@
+{{define "content"}}
+<section class="container">
+  <div class="columns">
+    <div class="column">
+      {{ range $Note := .NoteList }}
+        <div class="input-group">
+          <span class="input-group-addon">
+            {{ $Note.Title }}
+          </span>
+          <a class="btn btn-action btn-primary" href="/view/{{$Note.ID}}">
+            <i class="icon icon-forward">View</i>
+          </a>
+          <a class="btn btn-action" href="/view/{{$Note.ID}}">
+            <i class="icon icon-edit">Edit</i>
+          </a>
+          <a class="btn btn-action" href="/view/{{$Note.ID}}">
+            <i class="icon icon-delete">Delete</i>
+          </a>
+        </div>
+      {{end}}
+    </div>
+  </div>
+</section>
+{{end}}
