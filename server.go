@@ -50,6 +50,7 @@ func (c *Counters) DecBy(name string, n int64) {
 // Server ...
 type Server struct {
 	bind      string
+	config    Config
 	templates *Templates
 	router    *httprouter.Router
 
@@ -160,9 +161,10 @@ func (s *Server) initRoutes() {
 }
 
 // NewServer ...
-func NewServer(bind string) *Server {
+func NewServer(bind string, config Config) *Server {
 	server := &Server{
 		bind:      bind,
+		config:    config,
 		router:    httprouter.New(),
 		templates: NewTemplates("base"),
 
