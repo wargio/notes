@@ -1,0 +1,26 @@
+{{define "content"}}
+<section class="container">
+  <div class="columns">
+    <div class="column">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">{{.Title}}</div>
+        </div>
+        <div class="panel-body">{{.HTML}}</div>
+        <div class="panel-footer">
+          <div class="btn-group">
+            <a class="btn btn-primary mr-5" href="/edit/{{.ID}}">
+              <i class="icon icon-edit"></i>
+              Edit
+            </a>
+            <a class="btn" href="/delete/{{.ID}}">
+              <i class="icon icon-delete"></i>
+              Delete
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{{end}}

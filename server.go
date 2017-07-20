@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 
 	// Logging
 	"github.com/unrolled/logger"
@@ -18,6 +19,8 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"github.com/NYTimes/gziphandler"
 	"github.com/julienschmidt/httprouter"
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday"
 )
 
 // Counters ...
@@ -99,8 +102,11 @@ func (s *Server) IndexHandler() httprouter.Handle {
 	}
 }
 
+// EditContext ...
 type EditContext struct {
-	Body string
+	ID    int
+	Title string
+	Body  string
 }
 
 // EditHandler ...
@@ -108,18 +114,108 @@ func (s *Server) EditHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_edit")
 
-		/*
-			todo := NewNote(r.FormValue("title"))
-			err := db.Save(todo)
+		var id string
+
+		id = p.ByName("id")
+		if id == "" {
+			id = r.FormValue("id")
+		}
+
+		var (
+			note Note
+			body []byte
+		)
+
+		if id != "" {
+			i, err := strconv.ParseInt(id, 10, 64)
 			if err != nil {
+				log.Printf("error parsing id %s: %s", id, err)
 				http.Error(w, "Internal Error", http.StatusInternalServerError)
 				return
 			}
-		*/
 
-		ctx := &EditContext{}
+			err = db.One("ID", i, &note)
+			if err != nil {
+				log.Printf("error looking up note %d: %s", i, err)
+				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				return
+			}
+
+			body, err = note.LoadBody(s.config.data)
+			if err != nil {
+				log.Printf("error loading note body for %d: %s", i, err)
+				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		ctx := &EditContext{
+			ID:    note.ID,
+			Title: note.Title,
+			Body:  string(body),
+		}
 
 		s.render("edit", w, ctx)
+	}
+}
+
+// ViewContext ...
+type ViewContext struct {
+	ID    int
+	Title string
+	HTML  template.HTML
+}
+
+// ViewHandler ...
+func (s *Server) ViewHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		s.counters.Inc("n_view")
+
+		var id string
+
+		id = p.ByName("id")
+		if id == "" {
+			id = r.FormValue("id")
+		}
+
+		if id == "" {
+			log.Printf("no id specified to view: %s", id)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		i, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			log.Printf("error parsing id %s: %s", id, err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		var note Note
+		err = db.One("ID", i, &note)
+		if err != nil {
+			log.Printf("error looking up note %d: %s", i, err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		body, err := note.LoadBody(s.config.data)
+		if err != nil {
+			log.Printf("error loading note body for %d: %s", i, err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		unsafe := blackfriday.MarkdownCommon(body)
+		html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+
+		ctx := &ViewContext{
+			ID:    note.ID,
+			Title: note.Title,
+			HTML:  template.HTML(html),
+		}
+
+		s.render("view", w, ctx)
 	}
 }
 
@@ -192,6 +288,8 @@ func (s *Server) initRoutes() {
 	s.router.GET("/", s.IndexHandler())
 
 	s.router.GET("/new", s.EditHandler())
+	s.router.GET("/edit/:id", s.EditHandler())
+	s.router.GET("/view/:id", s.ViewHandler())
 	s.router.POST("/save", s.SaveHandler())
 }
 
@@ -226,7 +324,12 @@ func NewServer(bind string, config Config) *Server {
 	template.Must(editTemplate.Parse(box.MustString("edit.html")))
 	template.Must(editTemplate.Parse(box.MustString("base.html")))
 
+	viewTemplate := template.New("view")
+	template.Must(viewTemplate.Parse(box.MustString("view.html")))
+	template.Must(viewTemplate.Parse(box.MustString("base.html")))
+
 	server.templates.Add("edit", editTemplate)
+	server.templates.Add("view", viewTemplate)
 	server.templates.Add("index", indexTemplate)
 
 	server.initRoutes()
