@@ -137,14 +137,21 @@ func (s *Server) SaveHandler() httprouter.Handle {
 		fmt.Printf(" body: %s\n", body)
 		fmt.Printf(" tags: %s\n", tags)
 
-		/*
-			todo := NewNote(r.FormValue("title"))
-			err := db.Save(todo)
-			if err != nil {
-				http.Error(w, "Internal Error", http.StatusInternalServerError)
-				return
-			}
-		*/
+		// TODO: Save tags
+		note := NewNote(title)
+		err := db.Save(note)
+		if err != nil {
+			log.Printf("error saving note: %s", err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = note.SaveBody(s.config.data, []byte(body))
+		if err != nil {
+			log.Printf("error saving note body: %s", err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
 
 		http.Redirect(w, r, "/", http.StatusFound)
 	}

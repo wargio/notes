@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"path"
 	"time"
 )
 
@@ -19,7 +22,31 @@ func NewNote(title string) *Note {
 	}
 }
 
-func (t *Note) SetTitle(title string) {
-	t.Title = title
-	t.UpdatedAt = time.Now()
+// SetTitle ...
+func (n *Note) SetTitle(title string) {
+	n.Title = title
+	n.UpdatedAt = time.Now()
+}
+
+// SaveBody ...
+func (n *Note) SaveBody(root string, body []byte) error {
+	filename := path.Join(
+		root, fmt.Sprintf("%s.md", n.CreatedAt.Format("2006-01-02-150405")),
+	)
+
+	return ioutil.WriteFile(filename, body, 0600)
+}
+
+// LoadBody ...
+func (n *Note) LoadBody(root string) ([]byte, error) {
+	filename := path.Join(
+		root, fmt.Sprintf("%s.md", n.CreatedAt.Format("2006-01-02-150405")),
+	)
+
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
