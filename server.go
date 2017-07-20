@@ -219,6 +219,57 @@ func (s *Server) ViewHandler() httprouter.Handle {
 	}
 }
 
+// DeleteHandler ...
+func (s *Server) DeleteHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		s.counters.Inc("n_delete")
+
+		var id string
+
+		id = p.ByName("id")
+		if id == "" {
+			id = r.FormValue("id")
+		}
+
+		if id == "" {
+			log.Printf("no id specified to delete: %s", id)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		i, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			log.Printf("error parsing id %s: %s", id, err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		var note Note
+		err = db.One("ID", i, &note)
+		if err != nil {
+			log.Printf("error looking up note %d: %s", i, err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = db.DeleteStruct(&note)
+		if err != nil {
+			log.Printf("error deleting note %d: %s", i, err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		err = note.DeleteBody(s.config.data)
+		if err != nil {
+			log.Printf("error deleting note body %d: %s", i, err)
+			http.Error(w, "Internal Error", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusFound)
+	}
+}
+
 // SaveHandler ...
 func (s *Server) SaveHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -288,9 +339,11 @@ func (s *Server) initRoutes() {
 	s.router.GET("/", s.IndexHandler())
 
 	s.router.GET("/new", s.EditHandler())
+	s.router.POST("/save", s.SaveHandler())
+
 	s.router.GET("/edit/:id", s.EditHandler())
 	s.router.GET("/view/:id", s.ViewHandler())
-	s.router.POST("/save", s.SaveHandler())
+	s.router.GET("/delete/:id", s.DeleteHandler())
 }
 
 // NewServer ...

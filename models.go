@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"time"
 )
@@ -49,4 +50,13 @@ func (n *Note) LoadBody(root string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// DeleteBody ...
+func (n *Note) DeleteBody(root string) error {
+	filename := path.Join(
+		root, fmt.Sprintf("%s.md", n.CreatedAt.Format("2006-01-02-150405")),
+	)
+
+	return os.Remove(filename)
 }
