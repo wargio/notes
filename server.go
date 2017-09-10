@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -275,18 +274,28 @@ func (s *Server) SaveHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_save")
 
+		var note Note
+
+		id := SafeParseInt(p.ByName("id"), 0)
+
 		title := r.FormValue("title")
 		body := r.FormValue("body")
-		tags := r.FormValue("tags")
+		// TODO: Save tags
+		// tags := r.FormValue("tags")
 
-		log.Printf("note saved: ")
-		fmt.Printf(" title: %s\n", title)
-		fmt.Printf(" body: %s\n", body)
-		fmt.Printf(" tags: %s\n", tags)
+		if id > 0 {
+			err := db.One("ID", id, &note)
+			if err != nil {
+				log.Printf("error looking up note %d: %s", id, err)
+				http.Error(w, "Internal Error", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			note = *NewNote(title)
+		}
 
 		// TODO: Save tags
-		note := NewNote(title)
-		err := db.Save(note)
+		err := db.Save(&note)
 		if err != nil {
 			log.Printf("error saving note: %s", err)
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
