@@ -340,6 +340,7 @@ func (s *Server) initRoutes() {
 
 	s.router.GET("/new", s.EditHandler())
 	s.router.POST("/save", s.SaveHandler())
+	s.router.POST("/save/:id", s.SaveHandler())
 
 	s.router.GET("/edit/:id", s.EditHandler())
 	s.router.GET("/view/:id", s.ViewHandler())
