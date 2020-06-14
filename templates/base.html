@@ -13,13 +13,13 @@
   <section class="container grid-960 mt-10">
     <header class="navbar">
       <section class="navbar-section">
-        <a href="/" class="navbar-brand mr-10">Notes</a>
+        <a href="{{.Root}}" class="navbar-brand mr-10">Notes</a>
       </section>
       <section class="navbar-section">
-        <a href="/new" class="btn btn-primary">New Note</a>
+        <a href="{{.Root}}new" class="btn btn-primary">New Note</a>
       </section>
       <section class="navbar-section">
-        <form action="/search" action="POST">
+        <form action="{{.Root}}search" action="POST">
           <div class="input-group input-inline">
             <input class="form-input" type="text" name="q" placeholder="search" />
             <button class="btn btn-primary input-group-btn">
@@ -33,13 +33,13 @@
           </a>
           <ul class="menu">
             <li class="menu-item">
-              <a href="/profile">Profile</a>
+              <a href="{{.Root}}profile">Profile</a>
             </li>
             <li class="menu-item">
-              <a href="/settings">Settings</a>
+              <a href="{{.Root}}settings">Settings</a>
             </li>
             <li class="menu-item">
-              <a href="/logout">Logout</a>
+              <a href="{{.Root}}logout">Logout</a>
             </li>
           </ul>
         </div>

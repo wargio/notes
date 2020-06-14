@@ -78,11 +78,12 @@ func (s *Server) render(name string, w http.ResponseWriter, ctx interface{}) {
 }
 
 type IndexContext struct {
+	Root     string
 	NoteList []*Note
 }
 
 // IndexHandler ...
-func (s *Server) IndexHandler() httprouter.Handle {
+func (s *Server) IndexHandler(root string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		s.counters.Inc("n_index")
 
@@ -94,6 +95,7 @@ func (s *Server) IndexHandler() httprouter.Handle {
 		}
 
 		ctx := &IndexContext{
+			Root:     root,
 			NoteList: noteList,
 		}
 
@@ -103,13 +105,14 @@ func (s *Server) IndexHandler() httprouter.Handle {
 
 // EditContext ...
 type EditContext struct {
+	Root  string
 	ID    int
 	Title string
 	Body  string
 }
 
 // EditHandler ...
-func (s *Server) EditHandler() httprouter.Handle {
+func (s *Server) EditHandler(root string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_edit")
 
@@ -149,6 +152,7 @@ func (s *Server) EditHandler() httprouter.Handle {
 		}
 
 		ctx := &EditContext{
+			Root:  root,
 			ID:    note.ID,
 			Title: note.Title,
 			Body:  string(body),
@@ -160,13 +164,14 @@ func (s *Server) EditHandler() httprouter.Handle {
 
 // ViewContext ...
 type ViewContext struct {
+	Root  string
 	ID    int
 	Title string
 	HTML  template.HTML
 }
 
 // ViewHandler ...
-func (s *Server) ViewHandler() httprouter.Handle {
+func (s *Server) ViewHandler(root string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_view")
 
@@ -209,6 +214,7 @@ func (s *Server) ViewHandler() httprouter.Handle {
 		html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 
 		ctx := &ViewContext{
+			Root:  root,
 			ID:    note.ID,
 			Title: note.Title,
 			HTML:  template.HTML(html),
@@ -219,7 +225,7 @@ func (s *Server) ViewHandler() httprouter.Handle {
 }
 
 // DeleteHandler ...
-func (s *Server) DeleteHandler() httprouter.Handle {
+func (s *Server) DeleteHandler(root string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_delete")
 
@@ -265,12 +271,12 @@ func (s *Server) DeleteHandler() httprouter.Handle {
 			return
 		}
 
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, root, http.StatusFound)
 	}
 }
 
 // SaveHandler ...
-func (s *Server) SaveHandler() httprouter.Handle {
+func (s *Server) SaveHandler(root string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_save")
 
@@ -309,7 +315,7 @@ func (s *Server) SaveHandler() httprouter.Handle {
 			return
 		}
 
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, root, http.StatusFound)
 	}
 }
 
@@ -341,23 +347,29 @@ func (s *Server) ListenAndServe() {
 	)
 }
 
-func (s *Server) initRoutes() {
+func (s *Server) initRoutes(root string) {
+	if root[len(root)-1] != '/' {
+		root += "/"
+	}
+	if root[0] != '/' {
+		root = "/" + root
+	}
 	s.router.Handler("GET", "/debug/metrics", exp.ExpHandler(s.counters.r))
 	s.router.GET("/debug/stats", s.StatsHandler())
 
-	s.router.GET("/", s.IndexHandler())
+	s.router.GET("/", s.IndexHandler(root))
 
-	s.router.GET("/new", s.EditHandler())
-	s.router.POST("/save", s.SaveHandler())
-	s.router.POST("/save/:id", s.SaveHandler())
+	s.router.GET("/new", s.EditHandler(root))
+	s.router.POST("/save", s.SaveHandler(root))
+	s.router.POST("/save/:id", s.SaveHandler(root))
 
-	s.router.GET("/edit/:id", s.EditHandler())
-	s.router.GET("/view/:id", s.ViewHandler())
-	s.router.GET("/delete/:id", s.DeleteHandler())
+	s.router.GET("/edit/:id", s.EditHandler(root))
+	s.router.GET("/view/:id", s.ViewHandler(root))
+	s.router.GET("/delete/:id", s.DeleteHandler(root))
 }
 
 // NewServer ...
-func NewServer(bind string, config Config) *Server {
+func NewServer(bind string, config Config, root string) *Server {
 	server := &Server{
 		bind:      bind,
 		config:    config,
@@ -395,7 +407,7 @@ func NewServer(bind string, config Config) *Server {
 	server.templates.Add("view", viewTemplate)
 	server.templates.Add("index", indexTemplate)
 
-	server.initRoutes()
+	server.initRoutes(root)
 
 	return server
 }

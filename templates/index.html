@@ -7,13 +7,13 @@
           <span class="input-group-addon">
             {{ $Note.Title }}
           </span>
-          <a class="btn btn-action btn-primary" href="/view/{{$Note.ID}}">
+          <a class="btn btn-action btn-primary" href="{{.Root}}view/{{$Note.ID}}">
             <i class="icon icon-forward">View</i>
           </a>
-          <a class="btn btn-action" href="/edit/{{$Note.ID}}">
+          <a class="btn btn-action" href="{{.Root}}edit/{{$Note.ID}}">
             <i class="icon icon-edit">Edit</i>
           </a>
-          <a class="btn btn-action" href="/delete/{{$Note.ID}}">
+          <a class="btn btn-action" href="{{.Root}}delete/{{$Note.ID}}">
             <i class="icon icon-delete">Delete</i>
           </a>
         </div>

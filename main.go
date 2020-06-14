@@ -14,12 +14,14 @@ var (
 
 func main() {
 	var (
+		root   string
 		config string
 		data   string
 		dbpath string
 		bind   string
 	)
 
+	flag.StringVar(&root, "root", "/", "allows to define a custom root path for the notes app url")
 	flag.StringVar(&config, "config", "", "config file")
 	flag.StringVar(&data, "data", "./data", "path to data")
 	flag.StringVar(&dbpath, "dbpath", "notes.db", "Database path")
@@ -36,5 +38,5 @@ func main() {
 	// TODO: Abstract the Config and Handlers better
 	cfg.data = data
 
-	NewServer(bind, cfg).ListenAndServe()
+	NewServer(bind, cfg, root).ListenAndServe()
 }
