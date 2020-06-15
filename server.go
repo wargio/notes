@@ -53,6 +53,7 @@ func (c *Counters) DecBy(name string, n int64) {
 // Server ...
 type Server struct {
 	bind      string
+	root      string
 	config    Config
 	templates *Templates
 	router    *httprouter.Router
@@ -83,7 +84,7 @@ type IndexContext struct {
 }
 
 // IndexHandler ...
-func (s *Server) IndexHandler(root string) httprouter.Handle {
+func (s *Server) IndexHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		s.counters.Inc("n_index")
 
@@ -95,7 +96,7 @@ func (s *Server) IndexHandler(root string) httprouter.Handle {
 		}
 
 		ctx := &IndexContext{
-			Root:     root,
+			Root:     s.root,
 			NoteList: noteList,
 		}
 
@@ -112,7 +113,7 @@ type EditContext struct {
 }
 
 // EditHandler ...
-func (s *Server) EditHandler(root string) httprouter.Handle {
+func (s *Server) EditHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_edit")
 
@@ -152,7 +153,7 @@ func (s *Server) EditHandler(root string) httprouter.Handle {
 		}
 
 		ctx := &EditContext{
-			Root:  root,
+			Root:  s.root,
 			ID:    note.ID,
 			Title: note.Title,
 			Body:  string(body),
@@ -171,7 +172,7 @@ type ViewContext struct {
 }
 
 // ViewHandler ...
-func (s *Server) ViewHandler(root string) httprouter.Handle {
+func (s *Server) ViewHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_view")
 
@@ -214,7 +215,7 @@ func (s *Server) ViewHandler(root string) httprouter.Handle {
 		html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 
 		ctx := &ViewContext{
-			Root:  root,
+			Root:  s.root,
 			ID:    note.ID,
 			Title: note.Title,
 			HTML:  template.HTML(html),
@@ -225,7 +226,7 @@ func (s *Server) ViewHandler(root string) httprouter.Handle {
 }
 
 // DeleteHandler ...
-func (s *Server) DeleteHandler(root string) httprouter.Handle {
+func (s *Server) DeleteHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_delete")
 
@@ -271,18 +272,21 @@ func (s *Server) DeleteHandler(root string) httprouter.Handle {
 			return
 		}
 
-		http.Redirect(w, r, root, http.StatusFound)
+		http.Redirect(w, r, s.root, http.StatusFound)
 	}
 }
 
 // SaveHandler ...
-func (s *Server) SaveHandler(root string) httprouter.Handle {
+func (s *Server) SaveHandler() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		s.counters.Inc("n_save")
 
 		var note Note
 
-		id := SafeParseInt(p.ByName("id"), 0)
+		redirect := s.root
+
+		sid := p.ByName("id")
+		id := SafeParseInt(sid, 0)
 
 		title := r.FormValue("title")
 		body := r.FormValue("body")
@@ -296,6 +300,7 @@ func (s *Server) SaveHandler(root string) httprouter.Handle {
 				http.Error(w, "Internal Error", http.StatusInternalServerError)
 				return
 			}
+			redirect += "view/" + sid
 		} else {
 			note = *NewNote(title)
 		}
@@ -315,7 +320,7 @@ func (s *Server) SaveHandler(root string) httprouter.Handle {
 			return
 		}
 
-		http.Redirect(w, r, root, http.StatusFound)
+		http.Redirect(w, r, redirect, http.StatusFound)
 	}
 }
 
@@ -347,31 +352,32 @@ func (s *Server) ListenAndServe() {
 	)
 }
 
-func (s *Server) initRoutes(root string) {
-	if root[len(root)-1] != '/' {
-		root += "/"
+func (s *Server) initRoutes() {
+	if s.root[len(s.root)-1] != '/' {
+		s.root += "/"
 	}
-	if root[0] != '/' {
-		root = "/" + root
+	if s.root[0] != '/' {
+		s.root = "/" + s.root
 	}
 	s.router.Handler("GET", "/debug/metrics", exp.ExpHandler(s.counters.r))
 	s.router.GET("/debug/stats", s.StatsHandler())
 
-	s.router.GET("/", s.IndexHandler(root))
+	s.router.GET("/", s.IndexHandler())
 
-	s.router.GET("/new", s.EditHandler(root))
-	s.router.POST("/save", s.SaveHandler(root))
-	s.router.POST("/save/:id", s.SaveHandler(root))
+	s.router.GET("/new", s.EditHandler())
+	s.router.POST("/save", s.SaveHandler())
+	s.router.POST("/save/:id", s.SaveHandler())
 
-	s.router.GET("/edit/:id", s.EditHandler(root))
-	s.router.GET("/view/:id", s.ViewHandler(root))
-	s.router.GET("/delete/:id", s.DeleteHandler(root))
+	s.router.GET("/edit/:id", s.EditHandler())
+	s.router.GET("/view/:id", s.ViewHandler())
+	s.router.GET("/delete/:id", s.DeleteHandler())
 }
 
 // NewServer ...
 func NewServer(bind string, config Config, root string) *Server {
 	server := &Server{
 		bind:      bind,
+		root:      root,
 		config:    config,
 		router:    httprouter.New(),
 		templates: NewTemplates("base"),
@@ -407,7 +413,7 @@ func NewServer(bind string, config Config, root string) *Server {
 	server.templates.Add("view", viewTemplate)
 	server.templates.Add("index", indexTemplate)
 
-	server.initRoutes(root)
+	server.initRoutes()
 
 	return server
 }

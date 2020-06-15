@@ -18,32 +18,6 @@
       <section class="navbar-section">
         <a href="{{.Root}}new" class="btn btn-primary">New Note</a>
       </section>
-      <section class="navbar-section">
-        <form action="{{.Root}}search" action="POST">
-          <div class="input-group input-inline">
-            <input class="form-input" type="text" name="q" placeholder="search" />
-            <button class="btn btn-primary input-group-btn">
-              <i class="icon icon-search">Search</i>
-            </button>
-          </div>
-        </form>
-        <div class="dropdown dropdown-right">
-          <a href="#" class="btn btn-link dropdown-toggle" tabindex="0">
-            <i class="icon icon-menu"></i>
-          </a>
-          <ul class="menu">
-            <li class="menu-item">
-              <a href="{{.Root}}profile">Profile</a>
-            </li>
-            <li class="menu-item">
-              <a href="{{.Root}}settings">Settings</a>
-            </li>
-            <li class="menu-item">
-              <a href="{{.Root}}logout">Logout</a>
-            </li>
-          </ul>
-        </div>
-      </section>
     </header>
     {{template "content" .}}
   </section>
