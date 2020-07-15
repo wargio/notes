@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"path"
 
 	// Logging
 	"github.com/unrolled/logger"
@@ -359,18 +360,25 @@ func (s *Server) initRoutes() {
 	if s.root[0] != '/' {
 		s.root = "/" + s.root
 	}
-	s.router.Handler("GET", "/debug/metrics", exp.ExpHandler(s.counters.r))
-	s.router.GET("/debug/stats", s.StatsHandler())
+	s.router.Handler("GET", path.Join(s.root, "/debug/metrics"), exp.ExpHandler(s.counters.r))
+	s.router.GET(path.Join(s.root, "/debug/stats"), s.StatsHandler())
 
-	s.router.GET("/", s.IndexHandler())
+	if s.root == "/" {
+		s.router.GET("/", s.IndexHandler())
+	} else {
+		s.router.GET("/", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+			http.Redirect(w, r, s.root, http.StatusTemporaryRedirect)
+		})
+		s.router.GET(s.root, s.IndexHandler())
+	}
 
-	s.router.GET("/new", s.EditHandler())
-	s.router.POST("/save", s.SaveHandler())
-	s.router.POST("/save/:id", s.SaveHandler())
+	s.router.GET(path.Join(s.root, "/new"), s.EditHandler())
+	s.router.POST(path.Join(s.root, "/save"), s.SaveHandler())
+	s.router.POST(path.Join(s.root, "/save/:id"), s.SaveHandler())
 
-	s.router.GET("/edit/:id", s.EditHandler())
-	s.router.GET("/view/:id", s.ViewHandler())
-	s.router.GET("/delete/:id", s.DeleteHandler())
+	s.router.GET(path.Join(s.root, "/edit/:id"), s.EditHandler())
+	s.router.GET(path.Join(s.root, "/view/:id"), s.ViewHandler())
+	s.router.GET(path.Join(s.root, "/delete/:id"), s.DeleteHandler())
 }
 
 // NewServer ...

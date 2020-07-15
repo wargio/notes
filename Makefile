@@ -6,7 +6,7 @@ dev: build
 	./notes
 
 build: clean
-	go get ./...
+	go get -d ./...
 	go build .
 
 test:
