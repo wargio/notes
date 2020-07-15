@@ -1,8 +1,8 @@
 .PHONY: dev build clean
 
-all: dev
+all: build
 
-dev: build
+run: build
 	./notes
 
 build: clean

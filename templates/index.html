@@ -4,18 +4,12 @@
     <div class="column">
       {{ $root := .Root}}
       {{ range $Note := .NoteList }}
-        <div class="input-group">
-          <span class="input-group-addon">
+        <div class="input-group spacing-top">
+          <span class="input-group-addon spacing-left">
             {{ $Note.Title }}
           </span>
-          <a class="btn btn-action btn-primary" href="{{$root}}view/{{$Note.ID}}">
+          <a class="btn btn-action spacing-left" href="{{$root}}view/{{$Note.ID}}">
             <i class="icon icon-forward">View</i>
-          </a>
-          <a class="btn btn-action" href="{{$root}}edit/{{$Note.ID}}">
-            <i class="icon icon-edit">Edit</i>
-          </a>
-          <a class="btn btn-action" href="{{$root}}delete/{{$Note.ID}}">
-            <i class="icon icon-delete">Delete</i>
           </a>
         </div>
       {{end}}
