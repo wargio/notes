@@ -16,7 +16,6 @@ import (
 	"github.com/rcrowley/go-metrics/exp"
 	"github.com/thoas/stats"
 
-	"github.com/GeertJohan/go.rice"
 	"github.com/NYTimes/gziphandler"
 	"github.com/julienschmidt/httprouter"
 	"github.com/microcosm-cc/bluemonday"
@@ -381,6 +380,14 @@ func (s *Server) initRoutes() {
 	s.router.GET(path.Join(s.root, "/delete/:id"), s.DeleteHandler())
 }
 
+func loadAsset(filepath string) string {
+	file, ok := Assets.Files[filepath]
+	if !ok {
+		panic("can't open: " + filepath)
+	}
+	return string(file.Data)
+}
+
 // NewServer ...
 func NewServer(bind string, config Config, root string) *Server {
 	server := &Server{
@@ -403,19 +410,19 @@ func NewServer(bind string, config Config, root string) *Server {
 	}
 
 	// Templates
-	box := rice.MustFindBox("templates")
+	
 
 	indexTemplate := template.New("index")
-	template.Must(indexTemplate.Parse(box.MustString("index.html")))
-	template.Must(indexTemplate.Parse(box.MustString("base.html")))
+	template.Must(indexTemplate.Parse(loadAsset("/index.html")))
+	template.Must(indexTemplate.Parse(loadAsset("/base.html")))
 
 	editTemplate := template.New("edit")
-	template.Must(editTemplate.Parse(box.MustString("edit.html")))
-	template.Must(editTemplate.Parse(box.MustString("base.html")))
+	template.Must(editTemplate.Parse(loadAsset("/edit.html")))
+	template.Must(editTemplate.Parse(loadAsset("/base.html")))
 
 	viewTemplate := template.New("view")
-	template.Must(viewTemplate.Parse(box.MustString("view.html")))
-	template.Must(viewTemplate.Parse(box.MustString("base.html")))
+	template.Must(viewTemplate.Parse(loadAsset("/view.html")))
+	template.Must(viewTemplate.Parse(loadAsset("/base.html")))
 
 	server.templates.Add("edit", editTemplate)
 	server.templates.Add("view", viewTemplate)
