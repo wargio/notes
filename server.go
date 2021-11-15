@@ -3,10 +3,12 @@ package main
 import (
 	"encoding/json"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 	"path"
+	"strconv"
+	"strings"
 
 	// Logging
 	"github.com/unrolled/logger"
@@ -336,6 +338,45 @@ func (s *Server) StatsHandler() httprouter.Handle {
 	}
 }
 
+func loadStatic(file string) (int, string, []byte) {
+	asset, err := Static.Open(file)
+	if err != nil {
+		return 404, "text/plain", []byte(http.StatusText(404))
+	}
+
+	content, err := ioutil.ReadAll(asset)
+	if err != nil {
+		return 500, "text/plain", []byte(http.StatusText(500))
+	}
+
+	var contentType string
+	if strings.HasSuffix(file, ".ico") {
+		contentType = "image/x-icon"
+	} else if strings.HasSuffix(file, ".html") {
+		contentType = "text/html"
+	} else if strings.HasSuffix(file, ".css") {
+		contentType = "text/css"
+	} else if strings.HasSuffix(file, ".js") {
+		contentType = "text/javascript"
+	} else {
+		contentType = http.DetectContentType(content)
+	}
+	return 200, contentType, content
+}
+
+// StaticHandler ...
+func (s *Server) StaticHandler() httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		path := p.ByName("path")
+		status, mime, data := loadStatic(path)
+		w.Header().Set("Content-Type", mime)
+		if status != 200 {
+			http.Error(w, string(data), status)
+		}
+		w.Write(data)
+	}
+}
+
 // ListenAndServe ...
 func (s *Server) ListenAndServe() {
 	log.Fatal(
@@ -372,6 +413,7 @@ func (s *Server) initRoutes() {
 	}
 
 	s.router.GET(path.Join(s.root, "/new"), s.EditHandler())
+	s.router.GET(path.Join(s.root, "/static/*path"), s.StaticHandler())
 	s.router.POST(path.Join(s.root, "/save"), s.SaveHandler())
 	s.router.POST(path.Join(s.root, "/save/:id"), s.SaveHandler())
 
@@ -380,12 +422,16 @@ func (s *Server) initRoutes() {
 	s.router.GET(path.Join(s.root, "/delete/:id"), s.DeleteHandler())
 }
 
-func loadAsset(filepath string) string {
-	file, ok := Assets.Files[filepath]
-	if !ok {
-		panic("can't open: " + filepath)
+func loadTemplate(filepath string) string {
+	asset, err := Tmpl.Open(filepath)
+	if err != nil {
+		panic(err)
 	}
-	return string(file.Data)
+	content, err := ioutil.ReadAll(asset)
+	if err != nil {
+		panic(err)
+	}
+	return string(content)
 }
 
 // NewServer ...
@@ -410,19 +456,18 @@ func NewServer(bind string, config Config, root string) *Server {
 	}
 
 	// Templates
-	
 
 	indexTemplate := template.New("index")
-	template.Must(indexTemplate.Parse(loadAsset("/index.html")))
-	template.Must(indexTemplate.Parse(loadAsset("/base.html")))
+	template.Must(indexTemplate.Parse(loadTemplate("/index.html")))
+	template.Must(indexTemplate.Parse(loadTemplate("/base.html")))
 
 	editTemplate := template.New("edit")
-	template.Must(editTemplate.Parse(loadAsset("/edit.html")))
-	template.Must(editTemplate.Parse(loadAsset("/base.html")))
+	template.Must(editTemplate.Parse(loadTemplate("/edit.html")))
+	template.Must(editTemplate.Parse(loadTemplate("/base.html")))
 
 	viewTemplate := template.New("view")
-	template.Must(viewTemplate.Parse(loadAsset("/view.html")))
-	template.Must(viewTemplate.Parse(loadAsset("/base.html")))
+	template.Must(viewTemplate.Parse(loadTemplate("/view.html")))
+	template.Must(viewTemplate.Parse(loadTemplate("/base.html")))
 
 	server.templates.Add("edit", editTemplate)
 	server.templates.Add("view", viewTemplate)
