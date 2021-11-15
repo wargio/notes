@@ -1,6 +1,6 @@
 {{define "stylesheets"}}
-<link rel="stylesheet" href="static/css/simplemde.min.css">
-<link rel="stylesheet" href="static/css/font-awesome.min.css">
+<link rel="stylesheet" href="{{.Root}}static/css/simplemde.min.css">
+<link rel="stylesheet" href="{{.Root}}static/css/font-awesome.min.css">
 {{end}}
 {{define "content"}}
 <section class="container">
@@ -22,8 +22,8 @@
 </section>
 {{end}}
 {{define "scripts"}}
-<script src="static/js/jquery.slim.min.js"></script>
-<script src="static/js/simplemde.min.js"></script>
+<script src="{{.Root}}static/js/jquery.slim.min.js"></script>
+<script src="{{.Root}}static/js/simplemde.min.js"></script>
 <script>
 $(document).ready(function() {
   var simplemde = new SimpleMDE({

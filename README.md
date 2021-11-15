@@ -29,6 +29,14 @@ By default notes stores notes in `./data` in the current directory
 and metadata in `notes.db` in the current directory. This can
 be configured with the `-data` and `-dbpath` options.
 
+## Updating resources
+
+```
+go get -v github.com/jessevdk/go-assets-builder
+go-assets-builder templates/ -s /templates -o tmpl.go -v Tmpl
+go-assets-builder static/ -s /static -o static.go -v Static
+```
+
 ## License
 
 MIT
